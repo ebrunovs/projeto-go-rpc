@@ -73,6 +73,22 @@ func (l *RemoteList) Get(args GetArgs, reply *int) error{
 	return nil
 }
 
+func (l *RemoteList) Size(args SizeArgs, reply *int) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	list, exists := l.lists[args.ListID]
+	if !exists {
+		return errors.New("Lista não existe.\n")
+	}
+
+	*reply = len(list)
+
+	fmt.Printf("Tamanho da lista %s: %d\n", args.ListID, *reply)
+
+	return nil
+}
+
 func NewRemoteList() *RemoteList {
 	return &RemoteList{
 		lists: make(map[string][]int),
@@ -91,4 +107,8 @@ type RemoveArgs struct {
 type GetArgs struct {
 	ListID string
 	Index int
+}
+
+type SizeArgs struct {
+	ListID string
 }

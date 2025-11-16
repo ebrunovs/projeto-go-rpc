@@ -15,12 +15,47 @@ func main() {
 	var ok bool
 	var removed int
 	var value int
+	var size int
 
 	err = client.Call("RemoteList.Append", remotelist.AppendArgs{"A", 10}, &ok)
+	err = client.Call("RemoteList.Size", remotelist.SizeArgs{ListID: "A"}, &size)
+	if err != nil {
+		fmt.Println("Erro: ", err)
+	} else {
+		fmt.Println("Tamanho da lista:", size)
+	}
+
 	err = client.Call("RemoteList.Append", remotelist.AppendArgs{"A", 20}, &ok)
+	err = client.Call("RemoteList.Size", remotelist.SizeArgs{ListID: "A"}, &size)
+	if err != nil {
+		fmt.Println("Erro: ", err)
+	} else {
+		fmt.Println("Tamanho da lista:", size)
+	}
+
 	err = client.Call("RemoteList.Append", remotelist.AppendArgs{"A", 30}, &ok)
+	err = client.Call("RemoteList.Size", remotelist.SizeArgs{ListID: "A"}, &size)
+	if err != nil {
+		fmt.Println("Erro: ", err)
+	} else {
+		fmt.Println("Tamanho da lista:", size)
+	}
+
 	err = client.Call("RemoteList.Append", remotelist.AppendArgs{"B", 40}, &ok)
+	err = client.Call("RemoteList.Size", remotelist.SizeArgs{ListID: "B"}, &size)
+	if err != nil {
+		fmt.Println("Erro: ", err)
+	} else {
+		fmt.Println("Tamanho da lista:", size)
+	}
+
 	err = client.Call("RemoteList.Append", remotelist.AppendArgs{"abc", 50}, &ok)
+	err = client.Call("RemoteList.Size", remotelist.SizeArgs{ListID: "abc"}, &size)
+	if err != nil {
+		fmt.Println("Erro: ", err)
+	} else {
+		fmt.Println("Tamanho da lista:", size)
+	}
 
 	err = client.Call("RemoteList.Remove", remotelist.RemoveArgs{"A"}, &removed)
 	if err != nil {
@@ -28,6 +63,13 @@ func main() {
 	} else {
 		fmt.Println("Elemento retirado:", removed)
 	}
+	err = client.Call("RemoteList.Size", remotelist.SizeArgs{ListID: "A"}, &size)
+	if err != nil {
+		fmt.Println("Erro: ", err)
+	} else {
+		fmt.Println("Tamanho da lista:", size)
+	}
+
 	err = client.Call("RemoteList.Remove", remotelist.RemoveArgs{"abc"}, &removed)
 	if err != nil {
 		fmt.Print("Error:", err)
