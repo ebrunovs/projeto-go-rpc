@@ -34,11 +34,11 @@ func (l *RemoteList) Remove(args RemoveArgs, reply *int) error {
 	
 	list, exists := l.lists[args.ListID]
 	if !exists {
-		return errors.New("Lista não existe.")
+		return errors.New("Lista não existe.\n")
 	}
 
 	if len(list) == 0 {
-		return errors.New("Lista vazia.")
+		return errors.New("Lista vazia.\n")
 	}
 
 	last := list[len(list)-1]
@@ -48,6 +48,27 @@ func (l *RemoteList) Remove(args RemoveArgs, reply *int) error {
 
 	fmt.Printf("Item %d removido da lista %s. Estado atual: %v\n",
 		last, args.ListID, l.lists[args.ListID])
+
+	return nil
+}
+
+func (l *RemoteList) Get(args GetArgs, reply *int) error{
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	list, exists := l.lists[args.ListID]
+	if !exists {
+		return errors.New("Lista não existe.\n")
+	}
+
+	if args.Index < 0 || args.Index >= len(list) {
+		return errors.New("Índice fora dos limites.\n")
+	}
+
+	*reply = list[args.Index]
+
+	fmt.Printf("Get da lista %s na posição %d → %d\n",
+		args.ListID, args.Index, *reply)
 
 	return nil
 }
@@ -65,4 +86,9 @@ type AppendArgs struct {
 
 type RemoveArgs struct {
 	ListID string
+}
+
+type GetArgs struct {
+	ListID string
+	Index int
 }

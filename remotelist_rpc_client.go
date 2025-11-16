@@ -12,9 +12,9 @@ func main() {
 		fmt.Print("dialing:", err)
 	}
 
-	// Synchronous call
 	var ok bool
 	var removed int
+	var value int
 
 	err = client.Call("RemoteList.Append", remotelist.AppendArgs{"A", 10}, &ok)
 	err = client.Call("RemoteList.Append", remotelist.AppendArgs{"A", 20}, &ok)
@@ -39,5 +39,18 @@ func main() {
 		fmt.Print("Error:", err)
 	} else {
 		fmt.Println("Elemento retirado:", removed)
+	}
+
+	err = client.Call("RemoteList.Get", remotelist.GetArgs{ListID: "A", Index: 1,}, &value)
+	if err != nil {
+		fmt.Println("Error: ", err)
+	} else {
+		fmt.Println("Valor encontrado: ", value)
+	}
+	err = client.Call("RemoteList.Get", remotelist.GetArgs{ListID: "abc", Index: 2,}, &value)
+	if err != nil {
+		fmt.Println("Error: ", err)
+	} else {
+		fmt.Println("Valor encontrado: ", value)
 	}
 }
