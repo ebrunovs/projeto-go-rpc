@@ -14,6 +14,7 @@ func main() {
 
 	// Synchronous call
 	var ok bool
+	var removed int
 
 	err = client.Call("RemoteList.Append", remotelist.AppendArgs{"A", 10}, &ok)
 	err = client.Call("RemoteList.Append", remotelist.AppendArgs{"A", 20}, &ok)
@@ -21,16 +22,22 @@ func main() {
 	err = client.Call("RemoteList.Append", remotelist.AppendArgs{"B", 40}, &ok)
 	err = client.Call("RemoteList.Append", remotelist.AppendArgs{"abc", 50}, &ok)
 
-	// err = client.Call("RemoteList.Remove", 0, &reply_i)
-	// if err != nil {
-	// 	fmt.Print("Error:", err)
-	// } else {
-	// 	fmt.Println("Elemento retirado:", reply_i)
-	// }
-	// err = client.Call("RemoteList.Remove", 0, &reply_i)
-	// if err != nil {
-	// 	fmt.Print("Error:", err)
-	// } else {
-	// 	fmt.Println("Elemento retirado:", reply_i)
-	// }
+	err = client.Call("RemoteList.Remove", remotelist.RemoveArgs{"A"}, &removed)
+	if err != nil {
+		fmt.Print("Error:", err)
+	} else {
+		fmt.Println("Elemento retirado:", removed)
+	}
+	err = client.Call("RemoteList.Remove", remotelist.RemoveArgs{"abc"}, &removed)
+	if err != nil {
+		fmt.Print("Error:", err)
+	} else {
+		fmt.Println("Elemento retirado:", removed)
+	}
+	err = client.Call("RemoteList.Remove", remotelist.RemoveArgs{"abc"}, &removed)
+	if err != nil {
+		fmt.Print("Error:", err)
+	} else {
+		fmt.Println("Elemento retirado:", removed)
+	}
 }
