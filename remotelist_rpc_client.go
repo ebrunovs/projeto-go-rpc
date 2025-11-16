@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/rpc"
+	"ifpb/remotelist/pkg"
 )
 
 func main() {
@@ -12,24 +13,24 @@ func main() {
 	}
 
 	// Synchronous call
-	var reply bool
-	var reply_i int
-	err = client.Call("RemoteList.Append", 10, &reply)
-	err = client.Call("RemoteList.Append", 20, &reply)
-	err = client.Call("RemoteList.Append", 30, &reply)
-	err = client.Call("RemoteList.Append", 40, &reply)
-	err = client.Call("RemoteList.Append", 50, &reply)
+	var ok bool
 
-	err = client.Call("RemoteList.Remove", 0, &reply_i)
-	if err != nil {
-		fmt.Print("Error:", err)
-	} else {
-		fmt.Println("Elemento retirado:", reply_i)
-	}
-	err = client.Call("RemoteList.Remove", 0, &reply_i)
-	if err != nil {
-		fmt.Print("Error:", err)
-	} else {
-		fmt.Println("Elemento retirado:", reply_i)
-	}
+	err = client.Call("RemoteList.Append", remotelist.AppendArgs{"A", 10}, &ok)
+	err = client.Call("RemoteList.Append", remotelist.AppendArgs{"A", 20}, &ok)
+	err = client.Call("RemoteList.Append", remotelist.AppendArgs{"A", 30}, &ok)
+	err = client.Call("RemoteList.Append", remotelist.AppendArgs{"B", 40}, &ok)
+	err = client.Call("RemoteList.Append", remotelist.AppendArgs{"abc", 50}, &ok)
+
+	// err = client.Call("RemoteList.Remove", 0, &reply_i)
+	// if err != nil {
+	// 	fmt.Print("Error:", err)
+	// } else {
+	// 	fmt.Println("Elemento retirado:", reply_i)
+	// }
+	// err = client.Call("RemoteList.Remove", 0, &reply_i)
+	// if err != nil {
+	// 	fmt.Print("Error:", err)
+	// } else {
+	// 	fmt.Println("Elemento retirado:", reply_i)
+	// }
 }

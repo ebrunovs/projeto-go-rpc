@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	list := new(remotelist.RemoteList)
+	list := remotelist.NewRemoteList()
 	rpcs := rpc.NewServer()
 	rpcs.Register(list)
 	l, e := net.Listen("tcp", "[localhost]:5000")
