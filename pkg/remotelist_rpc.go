@@ -8,7 +8,7 @@ import (
 
 type RemoteList struct {
 	mu   sync.Mutex
-	lists map[string][]int
+	lists map[int][]int
 	//size uint32
 }
 
@@ -21,7 +21,7 @@ func (l *RemoteList) Append(args AppendArgs, reply *bool) error {
 	}
 
 	l.lists[args.ListID] = append(l.lists[args.ListID], args.Value)
-	fmt.Printf("Lista %s: %v\n", args.ListID, l.lists[args.ListID])
+	fmt.Printf("Lista %d: %v\n", args.ListID, l.lists[args.ListID])
 
 	//l.size++
 	*reply = true
@@ -46,7 +46,7 @@ func (l *RemoteList) Remove(args RemoveArgs, reply *int) error {
 
 	l.lists[args.ListID] = list[:len(list)-1]
 
-	fmt.Printf("Item %d removido da lista %s. Estado atual: %v\n",
+	fmt.Printf("Item %d removido da lista %d. Estado atual: %v\n",
 		last, args.ListID, l.lists[args.ListID])
 
 	return nil
@@ -67,7 +67,7 @@ func (l *RemoteList) Get(args GetArgs, reply *int) error{
 
 	*reply = list[args.Index]
 
-	fmt.Printf("Get da lista %s na posição %d → %d\n",
+	fmt.Printf("Get da lista %d na posição %d → %d\n",
 		args.ListID, args.Index, *reply)
 
 	return nil
@@ -84,31 +84,31 @@ func (l *RemoteList) Size(args SizeArgs, reply *int) error {
 
 	*reply = len(list)
 
-	fmt.Printf("Tamanho da lista %s: %d\n", args.ListID, *reply)
+	fmt.Printf("Tamanho da lista %d: %d\n", args.ListID, *reply)
 
 	return nil
 }
 
 func NewRemoteList() *RemoteList {
 	return &RemoteList{
-		lists: make(map[string][]int),
+		lists: make(map[int][]int),
 	}
 }
 
 type AppendArgs struct {
-	ListID string
+	ListID int
 	Value int
 }
 
 type RemoveArgs struct {
-	ListID string
+	ListID int
 }
 
 type GetArgs struct {
-	ListID string
+	ListID int
 	Index int
 }
 
 type SizeArgs struct {
-	ListID string
+	ListID int
 }
