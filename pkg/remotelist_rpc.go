@@ -9,7 +9,6 @@ import (
 type RemoteList struct {
 	mu   sync.Mutex
 	lists map[int][]int
-	//size uint32
 }
 
 func (l *RemoteList) Append(args AppendArgs, reply *bool) error {
