@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"encoding/json"
+	"os"
 )
 
 type RemoteList struct {
@@ -22,9 +24,8 @@ func (l *RemoteList) Append(args AppendArgs, reply *bool) error {
 	l.lists[args.ListID] = append(l.lists[args.ListID], args.Value)
 	fmt.Printf("Lista %d: %v\n", args.ListID, l.lists[args.ListID])
 
-	//l.size++
 	*reply = true
-	return nil
+	return l.save()
 }
 
 func (l *RemoteList) Remove(args RemoveArgs, reply *int) error {
@@ -48,7 +49,7 @@ func (l *RemoteList) Remove(args RemoveArgs, reply *int) error {
 	fmt.Printf("Item %d removido da lista %d. Estado atual: %v\n",
 		last, args.ListID, l.lists[args.ListID])
 
-	return nil
+	return l.save()
 }
 
 func (l *RemoteList) Get(args GetArgs, reply *int) error{
@@ -89,9 +90,11 @@ func (l *RemoteList) Size(args SizeArgs, reply *int) error {
 }
 
 func NewRemoteList() *RemoteList {
-	return &RemoteList{
+	l := &RemoteList{
 		lists: make(map[int][]int),
 	}
+	l.load()
+	return l
 }
 
 type AppendArgs struct {
@@ -110,4 +113,22 @@ type GetArgs struct {
 
 type SizeArgs struct {
 	ListID int
+}
+
+func (l *RemoteList) save() error {
+	data, err := json.MarshalIndent(l.lists, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile("data/lists.json", data, 0644)
+}
+
+func (l *RemoteList) load() error{
+	data, err := os.ReadFile("data/lists.json")
+	if err != nil {
+		return nil
+	}
+
+	return json.Unmarshal(data, &l.lists)
 }
