@@ -1,0 +1,7 @@
+append 1 10
+append 1 20
+append 1 30
+append 2 40
+append 3 50
+remove 1
+remove 3

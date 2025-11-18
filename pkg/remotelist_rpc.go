@@ -24,6 +24,8 @@ func (l *RemoteList) Append(args AppendArgs, reply *bool) error {
 	l.lists[args.ListID] = append(l.lists[args.ListID], args.Value)
 	fmt.Printf("Lista %d: %v\n", args.ListID, l.lists[args.ListID])
 
+	l.writeLog("append", args.ListID, args.Value)
+
 	*reply = true
 	return l.save()
 }
@@ -48,6 +50,8 @@ func (l *RemoteList) Remove(args RemoveArgs, reply *int) error {
 
 	fmt.Printf("Item %d removido da lista %d. Estado atual: %v\n",
 		last, args.ListID, l.lists[args.ListID])
+
+	l.writeLog("remove", args.ListID, 0)
 
 	return l.save()
 }
@@ -131,4 +135,22 @@ func (l *RemoteList) load() error{
 	}
 
 	return json.Unmarshal(data, &l.lists)
+}
+
+func (l *RemoteList) writeLog(op string, listID int, value int) error {
+	f, err := os.OpenFile("data/operations.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	var line string
+	if op == "append" {
+		line = fmt.Sprintf("append %d %d\n", listID, value)
+	} else {
+		line = fmt.Sprintf("remove %d\n", listID)
+	}
+
+	_, err = f.Write([]byte(line))
+	return err
 }
