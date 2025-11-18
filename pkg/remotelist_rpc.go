@@ -6,6 +6,9 @@ import (
 	"sync"
 	"encoding/json"
 	"os"
+	"bufio"
+	"strings"
+	"strconv"
 )
 
 type RemoteList struct {
@@ -128,13 +131,54 @@ func (l *RemoteList) save() error {
 	return os.WriteFile("data/lists.json", data, 0644)
 }
 
-func (l *RemoteList) load() error{
+func (l *RemoteList) loadArchive() error{
 	data, err := os.ReadFile("data/lists.json")
 	if err != nil {
 		return nil
 	}
 
 	return json.Unmarshal(data, &l.lists)
+}
+
+func (l *RemoteList) apllyLog() error {
+	file, err := os.Open("data/operations.log")
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		part := strings.Split(line, " ")
+
+		op := part[0]
+		listID, _ := strconv.Atoi(part[1])
+		
+		switch op {
+		case "append":
+			value, _ := strconv.Atoi(part[2])
+			l.lists[listID] = append(l.lists[listID], value)
+
+		case "remove":
+			if len(l.lists[listID]) > 0 {
+				l.lists[listID] = l.lists[listID][:len(l.lists[listID])-1]
+			}
+		}
+	}
+
+	return scanner.Err()
+}
+
+func(l *RemoteList) load() error {
+	if err := l.loadArchive(); err != nil {
+		return err
+	}
+	return l.apllyLog()
 }
 
 func (l *RemoteList) writeLog(op string, listID int, value int) error {
