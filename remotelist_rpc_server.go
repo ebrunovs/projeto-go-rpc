@@ -9,6 +9,9 @@ import (
 
 func main() {
 	list := remotelist.NewRemoteList()
+	if err := list.Load(); err != nil {
+        fmt.Println("Erro ao carregar dados:", err)
+    }
 	rpcs := rpc.NewServer()
 	rpcs.Register(list)
 	l, e := net.Listen("tcp", "[localhost]:5000")

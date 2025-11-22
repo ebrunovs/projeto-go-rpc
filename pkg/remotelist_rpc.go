@@ -97,11 +97,9 @@ func (l *RemoteList) Size(args SizeArgs, reply *int) error {
 }
 
 func NewRemoteList() *RemoteList {
-	l := &RemoteList{
+	return &RemoteList{
 		lists: make(map[int][]int),
 	}
-	l.load()
-	return l
 }
 
 type AppendArgs struct {
@@ -140,45 +138,54 @@ func (l *RemoteList) loadArchive() error{
 	return json.Unmarshal(data, &l.lists)
 }
 
-func (l *RemoteList) apllyLog() error {
-	file, err := os.Open("data/operations.log")
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
-	}
-	defer file.Close()
+func (l *RemoteList) applyLog() error {
+    file, err := os.Open("data/operations.log")
+    if err != nil {
+        return nil // sem log ainda, ok
+    }
+    defer file.Close()
 
-	scanner := bufio.NewScanner(file)
+    scanner := bufio.NewScanner(file)
 
-	for scanner.Scan() {
-		line := scanner.Text()
-		part := strings.Split(line, " ")
+    for scanner.Scan() {
+        line := scanner.Text()
+        parts := strings.Split(line, " ")
 
-		op := part[0]
-		listID, _ := strconv.Atoi(part[1])
-		
-		switch op {
-		case "append":
-			value, _ := strconv.Atoi(part[2])
-			l.lists[listID] = append(l.lists[listID], value)
+        if len(parts) < 2 {
+            continue
+        }
 
-		case "remove":
-			if len(l.lists[listID]) > 0 {
-				l.lists[listID] = l.lists[listID][:len(l.lists[listID])-1]
-			}
-		}
-	}
+        op := parts[0]
+        listID, _ := strconv.Atoi(parts[1])
 
-	return scanner.Err()
+        switch op {
+        case "append":
+            if len(parts) != 3 {
+                continue
+            }
+            value, _ := strconv.Atoi(parts[2])
+            l.lists[listID] = append(l.lists[listID], value)
+
+        case "remove":
+            list := l.lists[listID]
+            if len(list) > 0 {
+                l.lists[listID] = list[:len(list)-1]
+            }
+        }
+    }
+
+    return scanner.Err()
 }
 
-func(l *RemoteList) load() error {
+func(l *RemoteList) Load() error {
 	if err := l.loadArchive(); err != nil {
 		return err
 	}
-	return l.apllyLog()
+	if err := l.applyLog(); err != nil {
+        return err
+    }
+
+    return nil
 }
 
 func (l *RemoteList) writeLog(op string, listID int, value int) error {
