@@ -12,6 +12,7 @@ func main() {
 	if err := list.Load(); err != nil {
         fmt.Println("Erro ao carregar dados:", err)
     }
+	list.StartSnapshotRoutine()
 	rpcs := rpc.NewServer()
 	rpcs.Register(list)
 	l, e := net.Listen("tcp", "[localhost]:5000")

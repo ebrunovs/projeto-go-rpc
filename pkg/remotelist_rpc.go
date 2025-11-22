@@ -9,6 +9,7 @@ import (
 	"bufio"
 	"strings"
 	"strconv"
+	"time"
 )
 
 type RemoteList struct {
@@ -30,7 +31,7 @@ func (l *RemoteList) Append(args AppendArgs, reply *bool) error {
 	l.writeLog("append", args.ListID, args.Value)
 
 	*reply = true
-	return l.save()
+	return nil
 }
 
 func (l *RemoteList) Remove(args RemoveArgs, reply *int) error {
@@ -56,7 +57,7 @@ func (l *RemoteList) Remove(args RemoveArgs, reply *int) error {
 
 	l.writeLog("remove", args.ListID, 0)
 
-	return l.save()
+	return nil
 }
 
 func (l *RemoteList) Get(args GetArgs, reply *int) error{
@@ -120,28 +121,10 @@ type SizeArgs struct {
 	ListID int
 }
 
-func (l *RemoteList) save() error {
-	data, err := json.MarshalIndent(l.lists, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile("data/lists.json", data, 0644)
-}
-
-func (l *RemoteList) loadArchive() error{
-	data, err := os.ReadFile("data/lists.json")
-	if err != nil {
-		return nil
-	}
-
-	return json.Unmarshal(data, &l.lists)
-}
-
 func (l *RemoteList) applyLog() error {
     file, err := os.Open("data/operations.log")
     if err != nil {
-        return nil // sem log ainda, ok
+        return nil
     }
     defer file.Close()
 
@@ -178,14 +161,13 @@ func (l *RemoteList) applyLog() error {
 }
 
 func(l *RemoteList) Load() error {
-	if err := l.loadArchive(); err != nil {
-		return err
-	}
-	if err := l.applyLog(); err != nil {
-        return err
-    }
+	snapshotErr := l.loadSnapshot()
 
-    return nil
+	if snapshotErr == nil && len(l.lists) > 0 {
+		return l.applyLog()
+	}
+
+	return l.applyLog()
 }
 
 func (l *RemoteList) writeLog(op string, listID int, value int) error {
@@ -204,4 +186,44 @@ func (l *RemoteList) writeLog(op string, listID int, value int) error {
 
 	_, err = f.Write([]byte(line))
 	return err
+}
+
+func (l *RemoteList) loadSnapshot() error {
+	data, err := os.ReadFile("data/snapshot.json")
+	if err != nil {
+		return nil
+	}
+
+	return json.Unmarshal(data, &l.lists)
+}
+
+func (l *RemoteList) createSnapshot() error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	fmt.Println("Criando snapshot...\n")
+
+	data, err := json.MarshalIndent(l.lists, "", "  ")
+	if err != nil {
+		return err
+	}
+
+    if err := os.WriteFile("data/snapshot.json", data, 0644); err != nil {
+        return err
+    }
+
+    return os.WriteFile("data/operations.log", []byte{}, 0644)
+}
+
+func (l * RemoteList) StartSnapshotRoutine() {
+	go func() {
+		for {
+			time.Sleep(15 * time.Second)
+			if err := l.createSnapshot(); err != nil {
+				fmt.Println("Error ao criar snapshot: ", err)
+			} else {
+				fmt.Println("Snapshot salvo com sucesso.")
+			}
+		}
+	}()
 }
