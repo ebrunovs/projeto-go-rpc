@@ -56,7 +56,7 @@ func (l *RemoteList) Remove(args RemoveArgs, reply *int) error {
 		last, args.ListID, l.lists[args.ListID])
 
 	l.writeLog("remove", args.ListID, 0)
-
+	
 	return nil
 }
 
@@ -161,13 +161,11 @@ func (l *RemoteList) applyLog() error {
 }
 
 func(l *RemoteList) Load() error {
-	snapshotErr := l.loadSnapshot()
-
-	if snapshotErr == nil && len(l.lists) > 0 {
-		return l.applyLog()
-	}
-
-	return l.applyLog()
+	_ = l.loadSnapshot()
+	load := l.applyLog()
+	
+	l.createSnapshot()
+	return load
 }
 
 func (l *RemoteList) writeLog(op string, listID int, value int) error {
