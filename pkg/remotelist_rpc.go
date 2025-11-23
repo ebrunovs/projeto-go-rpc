@@ -4,17 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"encoding/json"
-	"os"
-	"bufio"
-	"strings"
-	"strconv"
 	"time"
 )
 
 type RemoteList struct {
 	mu   sync.Mutex
 	lists map[int][]int
+	pm    *PersistenceManager
 }
 
 func (l *RemoteList) Append(args AppendArgs, reply *bool) error {
@@ -27,9 +23,7 @@ func (l *RemoteList) Append(args AppendArgs, reply *bool) error {
 
 	l.lists[args.ListID] = append(l.lists[args.ListID], args.Value)
 	fmt.Printf("Lista %d: %v\n", args.ListID, l.lists[args.ListID])
-
-	l.writeLog("append", args.ListID, args.Value)
-
+	l.pm.WriteLog("append", args.ListID, args.Value)
 	*reply = true
 	return nil
 }
@@ -54,9 +48,7 @@ func (l *RemoteList) Remove(args RemoveArgs, reply *int) error {
 
 	fmt.Printf("Item %d removido da lista %d. Estado atual: %v\n",
 		last, args.ListID, l.lists[args.ListID])
-
-	l.writeLog("remove", args.ListID, 0)
-	
+	l.pm.WriteLog("remove", args.ListID, 0)
 	return nil
 }
 
@@ -98,8 +90,12 @@ func (l *RemoteList) Size(args SizeArgs, reply *int) error {
 }
 
 func NewRemoteList() *RemoteList {
+	mu := &sync.Mutex{}
+	pm := NewPersistenceManager("data/operations.log", "data/snapshot.json", mu)
 	return &RemoteList{
 		lists: make(map[int][]int),
+		pm:    pm,
+		mu:    *mu,
 	}
 }
 
@@ -121,106 +117,19 @@ type SizeArgs struct {
 	ListID int
 }
 
-func (l *RemoteList) applyLog() error {
-    file, err := os.Open("data/operations.log")
-    if err != nil {
-        return nil
-    }
-    defer file.Close()
-
-    scanner := bufio.NewScanner(file)
-
-    for scanner.Scan() {
-        line := scanner.Text()
-        parts := strings.Split(line, " ")
-
-        if len(parts) < 2 {
-            continue
-        }
-
-        op := parts[0]
-        listID, _ := strconv.Atoi(parts[1])
-
-        switch op {
-        case "append":
-            if len(parts) != 3 {
-                continue
-            }
-            value, _ := strconv.Atoi(parts[2])
-            l.lists[listID] = append(l.lists[listID], value)
-
-        case "remove":
-            list := l.lists[listID]
-            if len(list) > 0 {
-                l.lists[listID] = list[:len(list)-1]
-            }
-        }
-    }
-
-    return scanner.Err()
-}
-
 func(l *RemoteList) Load() error {
-	_ = l.loadSnapshot()
-	load := l.applyLog()
-	
-	l.createSnapshot()
+	_ = l.pm.LoadSnapshot(&l.lists)
+	load := l.pm.ApplyLog(&l.lists)
+	l.pm.CreateSnapshot(l.lists)
 	return load
 }
 
-func (l *RemoteList) writeLog(op string, listID int, value int) error {
-	f, err := os.OpenFile("data/operations.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	var line string
-	if op == "append" {
-		line = fmt.Sprintf("append %d %d\n", listID, value)
-	} else {
-		line = fmt.Sprintf("remove %d\n", listID)
-	}
-
-	_, err = f.Write([]byte(line))
-	return err
-}
-
-func (l *RemoteList) loadSnapshot() error {
-	data, err := os.ReadFile("data/snapshot.json")
-	if err != nil {
-		return nil
-	}
-
-	return json.Unmarshal(data, &l.lists)
-}
-
-func (l *RemoteList) createSnapshot() error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	fmt.Println("Criando snapshot...\n")
-
-	data, err := json.MarshalIndent(l.lists, "", "  ")
-	if err != nil {
-		return err
-	}
-
-    if err := os.WriteFile("data/snapshot.json", data, 0644); err != nil {
-        return err
-    }
-
-    return os.WriteFile("data/operations.log", []byte{}, 0644)
-}
-
-func (l * RemoteList) StartSnapshotRoutine() {
+func (l *RemoteList) StartSnapshotRoutine() {
 	go func() {
 		for {
 			time.Sleep(15 * time.Second)
-			if err := l.createSnapshot(); err != nil {
+			if err := l.pm.CreateSnapshot(l.lists); err != nil {
 				fmt.Println("Error ao criar snapshot: ", err)
-			} else {
-				fmt.Println("Snapshot salvo com sucesso.")
 			}
 		}
 	}()

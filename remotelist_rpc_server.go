@@ -9,9 +9,7 @@ import (
 
 func main() {
 	list := remotelist.NewRemoteList()
-	if err := list.Load(); err != nil {
-        fmt.Println("Erro ao carregar dados:", err)
-    }
+	list.Load()
 	list.StartSnapshotRoutine()
 	rpcs := rpc.NewServer()
 	rpcs.Register(list)
